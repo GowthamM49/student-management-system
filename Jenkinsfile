@@ -30,7 +30,7 @@ pipeline {
         }
         stage('Deploy to S3') {
             steps {
-                bat 'aws s3 sync frontend s3://student-website-system --delete'
+                bat """ "C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe" s3 sync frontend s3://student-website-system --delete """
             }
         }
     }
