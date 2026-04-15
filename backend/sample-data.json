@@ -1,0 +1,6 @@
+[
+  { "name": "Asha Kumar", "rollNumber": "CSE001", "department": "CSE", "marks": 92 },
+  { "name": "Ravi Sharma", "rollNumber": "ECE014", "department": "ECE", "marks": 78 },
+  { "name": "Meera Iyer", "rollNumber": "MECH007", "department": "MECH", "marks": 85 }
+]
+

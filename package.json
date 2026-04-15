@@ -1,0 +1,25 @@
+{
+  "name": "student-management-system",
+  "version": "1.0.0",
+  "description": "Simple Student Management System using Node.js, Express, MongoDB, and basic HTML/CSS/JS.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "seed": "node backend/seed.js"
+  },
+  "keywords": [
+    "student",
+    "express",
+    "mongodb",
+    "mongoose",
+    "crud"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongoose": "^8.13.2"
+  }
+}
+

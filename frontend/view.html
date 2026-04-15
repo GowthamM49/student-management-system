@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Students</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>Student Management System</h1>
+        <nav>
+          <a href="index.html">Home</a>
+          <a href="add.html">Add Student</a>
+          <a href="view.html">View Students</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <div class="row" style="justify-content: space-between">
+          <div>
+            <h2 style="margin-bottom: 4px">View Students</h2>
+            <div class="hint">Edit in the table, then click Save.</div>
+          </div>
+          <div class="row">
+            <button class="btn secondary" id="refreshBtn" type="button">Refresh</button>
+            <a class="btn" href="add.html">Add Student</a>
+            <span class="badge green">Table</span>
+          </div>
+        </div>
+
+        <div id="msg" style="display: none"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Roll Number</th>
+              <th>Department</th>
+              <th>Marks</th>
+              <th style="width: 230px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsBody">
+            <tr>
+              <td colspan="5" class="hint">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+      const msgEl = qs("#msg");
+      const bodyEl = qs("#studentsBody");
+      const refreshBtn = qs("#refreshBtn");
+
+      function renderEmpty(text) {
+        bodyEl.innerHTML = `<tr><td colspan="5" class="hint">${text}</td></tr>`;
+      }
+
+      function rowTemplate(student) {
+        const id = student._id;
+        const esc = (s) =>
+          String(s)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+
+        const marks = Number(student.marks);
+        const marksClass =
+          marks >= 80 ? "green" : marks >= 60 ? "blue" : marks >= 40 ? "orange" : "red";
+
+        return `
+          <tr data-id="${esc(id)}" data-mode="view">
+            <td data-field="name">${esc(student.name)}</td>
+            <td data-field="rollNumber">${esc(student.rollNumber)}</td>
+            <td data-field="department">${esc(student.department)}</td>
+            <td data-field="marks"><span class="badge ${marksClass}">${esc(student.marks)}</span></td>
+            <td>
+              <div class="actions">
+                <button class="btn secondary" data-action="edit" type="button">Edit</button>
+                <button class="btn" data-action="save" type="button" style="display:none">Save</button>
+                <button class="btn secondary" data-action="cancel" type="button" style="display:none">Cancel</button>
+                <button class="btn danger" data-action="delete" type="button">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      function toEditMode(tr) {
+        tr.dataset.mode = "edit";
+        ["name", "rollNumber", "department", "marks"].forEach((field) => {
+          const td = tr.querySelector(`td[data-field="${field}"]`);
+          const value =
+            field === "marks"
+              ? td.querySelector(".badge")?.textContent || td.textContent
+              : td.textContent;
+          const type = field === "marks" ? "number" : "text";
+          const extra =
+            field === "marks" ? ' min="0" max="100" step="1"' : "";
+          td.dataset.original = value;
+          td.innerHTML = `<input class="small-input" type="${type}" value="${value}"${extra} />`;
+        });
+        tr.querySelector('[data-action="edit"]').style.display = "none";
+        tr.querySelector('[data-action="delete"]').style.display = "none";
+        tr.querySelector('[data-action="save"]').style.display = "inline-block";
+        tr.querySelector('[data-action="cancel"]').style.display = "inline-block";
+      }
+
+      function toViewMode(tr, updatedStudent) {
+        tr.dataset.mode = "view";
+        ["name", "rollNumber", "department", "marks"].forEach((field) => {
+          const td = tr.querySelector(`td[data-field="${field}"]`);
+          if (field === "marks") {
+            const val = updatedStudent ? updatedStudent[field] : td.dataset.original;
+            const num = Number(val);
+            const cls =
+              num >= 80 ? "green" : num >= 60 ? "blue" : num >= 40 ? "orange" : "red";
+            td.innerHTML = `<span class="badge ${cls}">${val}</span>`;
+          } else {
+            if (updatedStudent) td.textContent = updatedStudent[field];
+            else td.textContent = td.dataset.original || td.textContent;
+          }
+          delete td.dataset.original;
+        });
+        tr.querySelector('[data-action="edit"]').style.display = "inline-block";
+        tr.querySelector('[data-action="delete"]').style.display = "inline-block";
+        tr.querySelector('[data-action="save"]').style.display = "none";
+        tr.querySelector('[data-action="cancel"]').style.display = "none";
+      }
+
+      function readRowPayload(tr) {
+        const getVal = (field) => {
+          const td = tr.querySelector(`td[data-field="${field}"]`);
+          const input = td.querySelector("input");
+          return input ? input.value : td.textContent;
+        };
+
+        return {
+          name: getVal("name"),
+          rollNumber: getVal("rollNumber"),
+          department: getVal("department"),
+          marks: getVal("marks")
+        };
+      }
+
+      async function loadStudents() {
+        clearMessage(msgEl);
+        renderEmpty("Loading...");
+        try {
+          const students = await apiFetch("/students");
+          if (!students || students.length === 0) {
+            renderEmpty("No students found. Add one from the Add Student page.");
+            return;
+          }
+          bodyEl.innerHTML = students.map(rowTemplate).join("");
+        } catch (err) {
+          renderEmpty("Failed to load students.");
+          setMessage(msgEl, { type: "error", text: err.message });
+        }
+      }
+
+      bodyEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const tr = btn.closest("tr[data-id]");
+        if (!tr) return;
+        const id = tr.dataset.id;
+
+        clearMessage(msgEl);
+
+        if (action === "edit") {
+          toEditMode(tr);
+          return;
+        }
+
+        if (action === "cancel") {
+          toViewMode(tr, null);
+          return;
+        }
+
+        if (action === "delete") {
+          const ok = confirm("Delete this student?");
+          if (!ok) return;
+          try {
+            await apiFetch(`/students/${id}`, { method: "DELETE" });
+            tr.remove();
+            if (bodyEl.children.length === 0) {
+              renderEmpty("No students found. Add one from the Add Student page.");
+            }
+            setMessage(msgEl, { type: "success", text: "Deleted successfully." });
+          } catch (err) {
+            setMessage(msgEl, { type: "error", text: err.message });
+          }
+          return;
+        }
+
+        if (action === "save") {
+          const payload = readRowPayload(tr);
+          const { ok, errors, sanitized } = validateStudent(payload);
+          if (!ok) {
+            setMessage(msgEl, { type: "error", text: errors.join(" ") });
+            return;
+          }
+          try {
+            const updated = await apiFetch(`/students/${id}`, {
+              method: "PUT",
+              body: JSON.stringify(sanitized)
+            });
+            toViewMode(tr, updated);
+            setMessage(msgEl, { type: "success", text: "Updated successfully." });
+          } catch (err) {
+            setMessage(msgEl, { type: "error", text: err.message });
+          }
+        }
+      });
+
+      refreshBtn.addEventListener("click", loadStudents);
+      loadStudents();
+    </script>
+  </body>
+</html>
+

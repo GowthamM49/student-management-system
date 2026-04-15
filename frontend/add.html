@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Student</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>Student Management System</h1>
+        <nav>
+          <a href="index.html">Home</a>
+          <a href="add.html">Add Student</a>
+          <a href="view.html">View Students</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 6px">
+          <h2 style="margin-bottom: 0">Add Student</h2>
+          <span class="badge blue">Form</span>
+        </div>
+        <div id="msg" style="display: none"></div>
+
+        <form id="studentForm">
+          <div class="grid">
+            <div>
+              <label for="name">Name</label>
+              <input id="name" name="name" placeholder="e.g. Asha Kumar" required />
+            </div>
+
+            <div>
+              <label for="rollNumber">Roll Number</label>
+              <input
+                id="rollNumber"
+                name="rollNumber"
+                placeholder="e.g. CSE001"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="department">Department</label>
+              <input
+                id="department"
+                name="department"
+                placeholder="e.g. CSE"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="marks">Marks (0 - 100)</label>
+              <input
+                id="marks"
+                name="marks"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="e.g. 92"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 14px">
+            <button class="btn" type="submit">Add Student</button>
+            <a class="btn secondary" href="view.html">View Students</a>
+            <span class="badge purple">Marks: 0–100</span>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+      const msgEl = qs("#msg");
+      const form = qs("#studentForm");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearMessage(msgEl);
+
+        const payload = {
+          name: qs("#name").value,
+          rollNumber: qs("#rollNumber").value,
+          department: qs("#department").value,
+          marks: qs("#marks").value
+        };
+
+        const { ok, errors, sanitized } = validateStudent(payload);
+        if (!ok) {
+          setMessage(msgEl, { type: "error", text: errors.join(" ") });
+          return;
+        }
+
+        try {
+          await apiFetch("/students", {
+            method: "POST",
+            body: JSON.stringify(sanitized)
+          });
+
+          setMessage(msgEl, { type: "success", text: "Student added successfully." });
+          form.reset();
+          qs("#name").focus();
+        } catch (err) {
+          setMessage(msgEl, { type: "error", text: err.message });
+        }
+      });
+    </script>
+  </body>
+</html>
+
