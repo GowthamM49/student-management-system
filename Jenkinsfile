@@ -28,5 +28,10 @@ pipeline {
                 echo "Deployment successful"
             }
         }
+        stage('Deploy to S3') {
+            steps {
+                bat 'aws s3 sync frontend s3://student-website-system --delete'
+            }
+        }
     }
 }
