@@ -17,9 +17,15 @@ pipeline {
             }
         }
 
-        stage('Run App') {
+        stage('Build') {
             steps {
-                bat 'node app.js'
+                echo "Build completed"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Deployment successful"
             }
         }
     }
