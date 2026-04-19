@@ -1,5 +1,12 @@
 # Student Management System (Static Frontend)
 
+git add .
+git commit -m "test auto deploy"
+git push
+
+
+
+
 ## Features
 - Add new student
 - View all students (table)
